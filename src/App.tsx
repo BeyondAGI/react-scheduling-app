@@ -1,86 +1,127 @@
 import './App.css';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Calendar } from 'primereact/calendar';
 import { Dropdown } from 'primereact/dropdown';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
+import { Column, ColumnBodyOptions } from 'primereact/column';
+import { Toast } from 'primereact/toast';
 
-interface IRoomScheduleDico { [roomId: string]: IRoomSchedule };
-
-interface IRoomSchedule { roomId: string; schedule: ISchedule; };
-
-interface ISchedule {
-  j_01: number;
-  j_02: number;
-  j_03: number;
-  j_04: number;
-  j_05: number;
+interface IColumn {
+  field: any;
+  header: String
 }
 
-function generateSchedule(): Map<Date, number> {
-  const startDate = new Date("07/01/2022");
-  const endDate = new Date("09/01/2022")
-  const dateArray: Map<Date, number> = new Map();
+function getColumns() {
+  const startDate = new Date("07/15/2022");
+  const endDate = new Date("07/25/2022");
+  let currentDate = new Date(startDate);
+  let idx = 0;
+  const columns: IColumn[] = []
+  while (currentDate <= new Date(endDate)) {
+    columns.push({ field: idx, header: currentDate.toDateString() });
+    // Use UTC date to prevent problems with time zones and DST
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    idx++;
+  }
+  return columns;
+}
+
+function generateSchedule(): Map<string, number> {
+  const startDate = new Date("07/15/2022");
+  const endDate = new Date("07/25/2022");
+  const dateArray: Map<string, number> = new Map();
 
   let currentDate = new Date(startDate);
+  let idx = 0
 
   while (currentDate <= new Date(endDate)) {
-    dateArray.set(currentDate, Math.floor(Math.random() * 12))
+    dateArray.set(new Date(currentDate).toDateString(), Math.floor(Math.random() * 12))
     // Use UTC date to prevent problems with time zones and DST
     currentDate.setUTCDate(currentDate.getUTCDate() + 1);
   }
   return dateArray;
 }
 
+function getScheduleMap(): Map<string, Map<string, number>> {
+  const scheduleMap: Map<string, Map<string, number>> = new Map<string, Map<string, number>>();
+  for (let letter = 65; letter < 75; letter++) {
+    scheduleMap.set(`Room ${String.fromCharCode(letter)}`, generateSchedule());
+  }
+  return scheduleMap;
+}
+
 function App() {
   const [bookingDates, setBookingDates] = useState<Date | Date[] | undefined>(undefined);
   const [selectedRoom, setSelectedRoom] = useState(undefined);
 
-  function bookRoom(roomId: string, dates: Date[]) {
+  
+  
+
+  const [scheduleMap, setScheduleMap] = useState(getScheduleMap());
+  let obj = Object.values(Array.from(scheduleMap.entries()))
+  let obj1 = obj.map((x) => { return { roomId: x[0], schedule: Object.assign({}, Object.values(Array.from(x[1].values()))) }; });
+  const [schedule, setSchedule] = useState(obj1);
+
+  const toast = useRef<Toast>(null);
+
+
+  function bookRoom() {
+    if (typeof bookingDates == undefined) {
+      toast?.current?.show({ severity: 'error', summary: 'Error Message', detail: 'No Dates Seleted', life: 3000 });
+    } else if (bookingDates instanceof Array) {
+
+      // Check if stock is available
+      // let isAvailable = bookingDates.every((date) => scheduleMap.get(selectedRoom ?? "Room A")?.get(date.toDateString()) ?? -1 > -4);
+      let isAvailable = true;
+
+      if (isAvailable) {
+        // Remove Dates from stock
+        bookingDates.forEach((date) => scheduleMap.get(selectedRoom ?? "Room A")?.set(date.toDateString(), (scheduleMap.get(selectedRoom ?? "Room A")?.get(date.toDateString()) ?? 0) - 1))
+        // Conversion
+        let obj = Object.values(Array.from(scheduleMap.entries()))
+        let obj1 = obj.map((x) => { return { roomId: x[0], schedule: Object.assign({}, Object.values(Array.from(x[1].values()))) }; });
+        setSchedule(obj1);
+
+        toast?.current?.show({ severity: 'success', summary: 'Success Message', detail: 'Reservation Booked', life: 3000 });
+
+      } else {
+        toast?.current?.show({ severity: 'error', summary: 'Error Message', detail: 'Error: No Availability', life: 3000 });
+
+      }
+    }
   }
-  const c = { "444": { ad: 1, ac: 2 } }
 
-  const scheduleList: IRoomSchedule[] = [
-    { roomId: "A", schedule: { j_01: 10, j_02: 10, j_03: 10, j_04: 10, j_05: 10 } },
-    { roomId: "B", schedule: { j_01: 20, j_02: 30, j_03: 30, j_04: 30, j_05: 10 } },
-    { roomId: "C", schedule: { j_01: 50, j_02: 50, j_03: 20, j_04: 30, j_05: 10 } },
-    { roomId: "D", schedule: { j_01: 50, j_02: 50, j_03: 20, j_04: 30, j_05: 10 } },
-    { roomId: "E", schedule: { j_01: 50, j_02: 50, j_03: 20, j_04: 30, j_05: 10 } },
-  ];
 
-  const scheduleMap: Map<string, Map<Date, number>> = new Map<string, Map<Date, number>>();
-  for (let letter = 65; letter < 75; letter++) {
-    scheduleMap.set(String.fromCharCode(letter), generateSchedule());
+  const roomOptions = obj1.map((room) => { return { label: `${room.roomId}`, value: room.roomId } })
+
+  const columns = getColumns();
+
+
+
+  const valueBodyTemplate = (data: any, options: ColumnBodyOptions) => {
+    return <div className={`container value-${data.schedule[options.field.split('.')[1]]}`}><span > {data.schedule[options.field.split('.')[1]]}</span ></div>;
   }
-
-  const roomOptions = scheduleList.map((room) => { return { label: `Room ${room.roomId}`, value: room.roomId } })
-
-  console.log(Object.values(Array.from(scheduleMap.entries())))
-
-  let roomSchedulesDico: IRoomScheduleDico = Object.assign({}, ...scheduleList.map((x) => ({ [x.roomId]: x })));
+  const dynamicColumns = columns.map((col, i) => {
+    return <Column className="td" body={valueBodyTemplate} key={"schedule." + col.field} field={"schedule." + col.field} header={col.header} style={{ flexGrow: 1, flexBasis: '100px' }} />;
+  });
 
 
-  const [schedules, setSchedules] = useState(scheduleList);
 
   return (
     <div className="App">
+      <Toast ref={toast} />
       <header className="App-header">
 
-        <div className="card"> 
+        <div className="card">
           <div className="card-container yellow-container overflow-hidden">
             <div className="flex">
               <div className="flex-1 flex align-items-center justify-content-center font-bold text-gray-900 m-2 px-5 py-3 border-round"><Card>
                 <div className="card">
-                  <p>{Object.values(scheduleMap)}</p>
-                  <DataTable value={Object.values(Array.from(scheduleMap.entries()))} header="Accomodations Availability Matrix" footer="Footer" showGridlines responsiveLayout="scroll">
-                    <Column field="0" header="Room"></Column>
-                    <Column field="1.0" header="J+1"></Column>
-                    <Column field="schedule.j_02" header="J+2"></Column>
-                    <Column field="schedule.j_03" header="J+3"></Column>
-                    <Column field="schedule.j_04" header="J+4"></Column>
-                    <Column field="schedule.j_05" header="J+5"></Column>
+                  <DataTable scrollable scrollDirection="both" value={schedule} header="Accomodations Availability Matrix" footer="Footer" showGridlines responsiveLayout="scroll">
+                    <Column field="roomId" header="Room" style={{ flexGrow: 1, flexBasis: '200px' }}></Column>
+                    {dynamicColumns}
                   </DataTable>
                 </div>
               </Card></div>
@@ -91,10 +132,10 @@ function App() {
               </Card></div>
               <div className="flex-1 flex align-items-center justify-content-center font-bold text-gray-900 m-2 px-5 py-3 border-round">
                 <Card>
-                  <Calendar id="range" value={bookingDates} onChange={(e) => setBookingDates(e.value)} selectionMode="range" readOnlyInput />
+                  <Calendar id="range" value={bookingDates} onChange={(e) => setBookingDates(e.value)} selectionMode="multiple" readOnlyInput />
                 </Card></div>
               <div className="flex-1 flex align-items-center justify-content-center font-bold text-gray-900 m-2 px-5 py-3 border-round">
-                <Card><Button label="Book" /></Card>
+                <Card><Button label="Book" onClick={() => bookRoom()} /></Card>
               </div>
             </div>
           </div>

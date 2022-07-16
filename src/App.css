@@ -1,0 +1,65 @@
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+
+    width: 100%;
+    height: 100%;
+    padding: 1rem 1rem;
+    font-weight: 700;
+    
+}
+
+.value--0, .value--1, .value--2, .value--3, .value--4, .value--5, .value--6, .value--7 , .value--8,
+.value--9 {
+    background-color: rgb(0, 204, 255);
+    align-items: center;
+}
+
+.value-0 {
+    background-color: red;
+    align-items: center;
+    opacity: 60%;
+}
+
+.value-1 {
+    background-color: rgb(255, 115, 0);
+    align-items: center;
+}
+
+.value-2, .value-3, .value-4 {
+    background-color: rgb(255, 174, 0);
+    align-items: center;
+}
+
+.value-5, .value-6 {
+    background-color: rgb(255, 255, 255);
+    color: black;
+    align-items: center;
+}
+
+.value-7, .value-8, .value-9 {
+        background-color: rgb(255, 255, 255);
+            color: black;
+            align-items: center;
+    /* background-color: rgb(133, 189, 4);
+    align-items: center; */
+}
+
+.value-10, .value-11, .value-12 { 
+        background-color: rgb(173, 252, 186);
+            color: black;
+            align-items: center;
+    /* background-color: rgb(54, 146, 0);
+    align-items: center; */
+}
+
+.p-datatable.p-datatable-gridlines .p-datatable-tbody>tr>td {
+    border-bottom-width: 0 0 1px 0;
+}
+
+.p-datatable .p-datatable-tbody>tr>td {
+    padding: 0px 0px 0px 0px !important; 
+}
